@@ -24,18 +24,18 @@ for cell in os.listdir(root_folder):
     working_path = root_folder + os.sep + cell
     app = AngleManager()
     app.load_kymographs(path_kym1=working_path+os.sep+"kym1.tif", path_kym2=working_path+os.sep+"kym2.tif")
-    app.compute_coords()
+    app.compute_coords(method="Box")
     app.compute_regression()
     app.compute_angles()
 
     imsave(working_path+os.sep+"kym1_w_line.png", img_as_ubyte(app.kymograph_1_w_line))
     imsave(working_path+os.sep+"kym2_w_line.png", img_as_ubyte(app.kymograph_2_w_line))
 
-    report += '<tr><td valign="middle" width="100" align="center">' + cell + '</td><td valign="middle" width="100" align="center"><img src="./' + cell + '/kymline1.png" alt="pic" width="200"/></td>'
-    report += '<td valign="middle" width="200" align="center"><img src="./' + cell + '/kym1_w_line.png" alt="pic" width="200"/></td>'
+    report += '<tr><td valign="middle" width="100" align="center">' + cell + '</td><td valign="middle"  align="center"><img src="./' + cell + '/kymline1.png" alt="pic" width="200"/></td>'
+    report += '<td valign="middle" align="center"><img src="./' + cell + '/kym1_w_line.png" alt="pic"/></td>'
     report += '<td valign="middle" width="100" align="center">' + ("{0:.2f}").format(app.kym1_angle) + '</td>'
-    report += '<td valign="middle" width="200" align="center"><img src="./' + cell + '/kymline2.png" alt="pic" width="200"/></td>'
-    report += '<td valign="middle" width="200" align="center"><img src="./' + cell + '/kym2_w_line.png" alt="pic" width="200"/></td>'
+    report += '<td valign="middle" align="center"><img src="./' + cell + '/kymline2.png" alt="pic"/></td>'
+    report += '<td valign="middle" align="center"><img src="./' + cell + '/kym2_w_line.png" alt="pic"/></td>'
     report += '<td valign="middle" width="100" align="center">' + ("{0:.2f}").format(app.kym2_angle) + '</td>'
     report += '<td valign="middle" width="100" align="center">' + ("{0:.2f}").format(app.angle_diff) + '</td></tr>\n'
 

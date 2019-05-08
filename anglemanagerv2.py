@@ -10,6 +10,7 @@ from skimage.util import img_as_float
 from skimage.exposure import rescale_intensity
 from skimage.feature import peak_local_max
 from scipy import stats, ndimage
+from scipy import odr
 from scipy.spatial import ConvexHull
 from skimage.measure import EllipseModel
 from sklearn.linear_model import LinearRegression
@@ -18,6 +19,8 @@ from sklearn.linear_model import LinearRegression
 class AngleManager(object):
 
     def __init__(self):
+        self.pixel_size = 321
+        self.z_step = 150
 
         self.kymograph_1 = None
         self.kymograph_2 = None
@@ -163,7 +166,34 @@ class AngleManager(object):
 
         return [[x0, y0], [x1, y1], orientation]
 
-    def compute_coords(self):
+    def lin_func(self, params, x):
+        return params[0] * x + params[1]
+
+    def linreg(self, filtered_kym):
+        nonzero_points = np.nonzero(filtered_kym)
+        x_points = np.array(nonzero_points[0])
+        y_points = np.array(nonzero_points[1])
+
+        x_mean = np.mean(x_points)
+        y_mean = np.mean(y_points)
+
+        C = np.cov([x_points-x_mean, y_points-y_mean])
+        evals, evecs = np.linalg.eig(C)
+
+        a = evecs[1, evals.argmax()]/evecs[0, evals.argmax()]
+        b = y_mean - a * x_mean
+
+        x0 = np.min(np.array(nonzero_points[0]))
+        y0 = a * x0 + b
+        x1 = np.max(np.array(nonzero_points[0]))
+        y1 = a * x1 + b
+
+        print(x0, y0, x1, y1)
+
+        return [[x0, y0], [x1, y1]]
+
+
+    def compute_coords(self, method="LinReg"):
 
         kym1_sept_threshold = threshold_isodata(self.kymograph_1)
         kym2_sept_threshold = threshold_isodata(self.kymograph_2)
@@ -171,21 +201,25 @@ class AngleManager(object):
         self.filtered_kym1 = self.kymograph_1 > kym1_sept_threshold
         self.filtered_kym2 = self.kymograph_2 > kym2_sept_threshold
 
-        self.filtered_kym1 = ndimage.morphology.distance_transform_edt(self.filtered_kym1) > 1.5
-        self.filtered_kym2 = ndimage.morphology.distance_transform_edt(self.filtered_kym2) > 1.5
+        if method == "Box":
+            self.filtered_kym1 = ndimage.morphology.distance_transform_edt(self.filtered_kym1) > 1.2
+            self.filtered_kym2 = ndimage.morphology.distance_transform_edt(self.filtered_kym2) > 1.2
 
-        self.kym1_rectangle_coords = self.find_minimum_bounding_box(self.filtered_kym1)
-        self.kym2_rectangle_coords = self.find_minimum_bounding_box(self.filtered_kym2)
+            self.kym1_rectangle_coords = self.find_minimum_bounding_box(self.filtered_kym1)
+            self.kym2_rectangle_coords = self.find_minimum_bounding_box(self.filtered_kym2)
 
-        self.kym1_axis = self.find_length_axis(self.kym1_rectangle_coords)
-        self.kym2_axis = self.find_length_axis(self.kym2_rectangle_coords)
+            self.kym1_axis = self.find_length_axis(self.kym1_rectangle_coords)
+            self.kym2_axis = self.find_length_axis(self.kym2_rectangle_coords)
 
+        elif method == "LinReg":
+            self.kym1_axis = self.linreg(self.filtered_kym1)
+            self.kym2_axis = self.linreg(self.filtered_kym2)
 
     def calculate_line_points(self, kym, kym_axis):
 
         x0, y0 = kym_axis[0]
         x1, y1 = kym_axis[1]
-        x_points, y_points = line(x0, y0, x1, y1)
+        x_points, y_points = line(x0, int(y0), x1, int(y1))
 
         return [x_points, y_points]
 
@@ -203,7 +237,9 @@ class AngleManager(object):
     def angle_from_points(self, kym_axis):
 
         x0, y0 = kym_axis[0]
+        x0 = x0 * ((self.pixel_size + self.z_step) / self.z_step)
         x1, y1 = kym_axis[1]
+        x1 = x1 * ((self.pixel_size + self.z_step) / self.z_step)
 
         if x0 - x1 == 0:
             angle = 0.0
