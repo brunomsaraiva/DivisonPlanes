@@ -19,7 +19,7 @@ from sklearn.linear_model import LinearRegression
 class AngleManager(object):
 
     def __init__(self):
-        self.pixel_size = 321
+        self.pixel_size = 32.5
         self.z_step = 150
 
         self.kymograph_1 = None
@@ -237,9 +237,11 @@ class AngleManager(object):
     def angle_from_points(self, kym_axis):
 
         x0, y0 = kym_axis[0]
-        x0 = x0 * ((self.pixel_size + self.z_step) / self.z_step)
+        x0 = x0 * self.z_step
+        y0 = y0 * self.pixel_size
         x1, y1 = kym_axis[1]
-        x1 = x1 * ((self.pixel_size + self.z_step) / self.z_step)
+        x1 = x1 * self.z_step
+        y1 = y1 * self.pixel_size
 
         if x0 - x1 == 0:
             angle = 0.0
