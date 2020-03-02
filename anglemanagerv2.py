@@ -230,8 +230,8 @@ class AngleManager(object):
         kym1_sept_threshold = np.percentile(self.kymograph_1.flatten(), 95)
         kym2_sept_threshold = np.percentile(self.kymograph_2.flatten(), 95)
 
-        self.filtered_kym1 = ndimage.morphology.distance_transform_edt(self.filtered_kym1) > 1.2
-        self.filtered_kym2 = ndimage.morphology.distance_transform_edt(self.filtered_kym2) > 1.2
+        # self.filtered_kym1 = ndimage.morphology.distance_transform_edt(self.filtered_kym1) > 1.2
+        # self.filtered_kym2 = ndimage.morphology.distance_transform_edt(self.filtered_kym2) > 1.2
 
         self.filtered_kym1 = self.kymograph_1 > kym1_sept_threshold
         self.filtered_kym2 = self.kymograph_2 > kym2_sept_threshold
